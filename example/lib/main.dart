@@ -29,61 +29,59 @@ class PaymentPage extends StatefulWidget {
 }
 
 class _PaymentPageState extends State<PaymentPage> {
+  // Initialize Payvessel with your API key (like the npm package)
   final payvessel = Payvessel(
     config: PayvesselConfig(
-      publicKey: 'pk_test_xxxxx', // Replace with your public key
+      apiKey: 'YOUR_API_KEY', // Replace with your API key
     ),
   );
 
   String _status = 'Ready to pay';
   bool _isLoading = false;
 
-  // In a real app, you would call your backend to initialize the transaction
-  // and get the transaction ID. For demo purposes, we use a placeholder.
-  Future<String> _initializeTransaction() async {
-    // TODO: Call your backend API to initialize the transaction
-    // Example:
-    // final response = await http.post(
-    //   Uri.parse('https://your-server.com/api/payments/initialize'),
-    //   body: {'amount': 1000, 'email': 'customer@email.com'},
-    // );
-    // return jsonDecode(response.body)['transaction_id'];
-
-    // For demo, return a test transaction ID
-    return 'TEST-demo-transaction-id';
-  }
-
-  Future<void> _makePayment() async {
+  /// Launch checkout - similar to npm package's initializeCheckout
+  Future<void> _openCheckout() async {
     setState(() {
       _isLoading = true;
-      _status = 'Initializing payment...';
+      _status = 'Opening checkout...';
     });
 
     try {
-      // Step 1: Initialize transaction on your server
-      final transactionId = await _initializeTransaction();
-
-      setState(() => _status = 'Opening checkout...');
-
-      // Step 2: Launch checkout
-      final result = await payvessel.checkout(
+      // Initialize and launch checkout (like npm package)
+      final result = await payvessel.initializeCheckout(
         context: context,
-        transactionId: transactionId,
+        params: CheckoutParams(
+          customerEmail: 'customer@example.com',
+          customerPhoneNumber: '08012345678',
+          amount: '1000', // Amount in kobo for NGN
+          currency: 'NGN',
+          customerName: 'John Doe',
+          channels: [
+            PaymentChannels.bankTransfer,
+            PaymentChannels.card,
+          ],
+          metadata: {
+            'order_id': '12345',
+            'product': 'Premium Subscription',
+          },
+        ),
         appBarTitle: 'Complete Payment',
+        onError: (error) {
+          debugPrint('Checkout error: \$error');
+        },
       );
 
-      // Step 3: Handle result
+      // Handle result (like npm package callbacks)
       if (result.isSuccessful) {
-        setState(
-            () => _status = '✅ Payment successful!\nRef: ${result.reference}');
+        setState(() => _status = '✅ Payment successful!\nRef: \${result.reference}');
         _showSuccessDialog();
       } else if (result.isCancelled) {
         setState(() => _status = '❌ Payment cancelled');
       } else {
-        setState(() => _status = '❌ Payment failed: ${result.message}');
+        setState(() => _status = '❌ Payment failed: \${result.message}');
       }
     } catch (e) {
-      setState(() => _status = '❌ Error: $e');
+      setState(() => _status = '❌ Error: \$e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -125,7 +123,6 @@ class _PaymentPageState extends State<PaymentPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Product Card
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
@@ -167,7 +164,7 @@ class _PaymentPageState extends State<PaymentPage> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: _isLoading ? null : _makePayment,
+                        onPressed: _isLoading ? null : _openCheckout,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFFF6B00),
                           foregroundColor: Colors.white,
@@ -198,7 +195,6 @@ class _PaymentPageState extends State<PaymentPage> {
                 ),
               ),
               const SizedBox(height: 24),
-              // Status
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(

@@ -1,22 +1,23 @@
 /// Configuration for Payvessel checkout.
 class PayvesselConfig {
-  /// Your Payvessel public key.
-  final String publicKey;
+  /// Your Payvessel API key (public key).
+  final String apiKey;
 
   /// The base URL for the checkout.
   /// Defaults to Payvessel production checkout URL.
   final String checkoutUrl;
 
-  /// Whether to use test mode.
-  final bool testMode;
-
   PayvesselConfig({
-    required this.publicKey,
+    required this.apiKey,
     this.checkoutUrl = 'https://checkout.payvessel.com',
-    this.testMode = false,
   });
 
-  /// Get the full checkout URL with transaction ID.
+  /// Get the checkout URL for inline checkout.
+  String getInlineCheckoutUrl() {
+    return '$checkoutUrl/inline';
+  }
+
+  /// Get the full checkout URL with transaction ID (for pre-initialized transactions).
   String getCheckoutUrl(String transactionId) {
     return '$checkoutUrl/$transactionId';
   }

@@ -1,13 +1,15 @@
 # Flutter Payvessel
 
 A Flutter SDK for integrating Payvessel Payment Gateway into your mobile app.
+Works similar to the [npm package](https://www.npmjs.com/package/payvessel-checkout).
 
 ## Features
 
-- 🌐 **WebView-based checkout** - Uses your existing web checkout, ensuring consistency
-- 🔄 **Auto-updates** - Any web checkout improvements automatically apply to your app
-- 📱 **Full-screen & Bottom Sheet modes** - Choose how to display the checkout
-- ✅ **Simple API** - Just pass the transaction ID and get the result
+- 🚀 **Simple API** - Similar to the npm package `payvessel-checkout`
+- 💳 **Multiple Channels** - Bank Transfer and Card payments
+- 📱 **Full-screen & Bottom Sheet** - Choose how to display checkout
+- 🔄 **Callbacks** - onSuccess, onError, onClose support
+- 🌐 **WebView-based** - Uses your existing web checkout
 
 ## Installation
 
@@ -34,136 +36,124 @@ No additional setup required.
 
 ## Usage
 
-### 1. Initialize Transaction on Server
+### Initialize and Launch Checkout
 
-First, initialize the transaction on your backend server using the Payvessel API:
-
-```bash
-curl -X POST https://api.payvessel.com/api/external/transactions/initialize \
-  -H "Authorization: Bearer YOUR_SECRET_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "amount": 1000,
-    "currency": "NGN",
-    "email": "customer@email.com",
-    "name": "Customer Name"
-  }'
-```
-
-Response:
-```json
-{
-  "status": true,
-  "data": {
-    "id": "txn_abc123xyz",
-    "reference": "PV-1234567890"
-  }
-}
-```
-
-### 2. Launch Checkout in Flutter
+Similar to the npm package:
 
 ```dart
 import 'package:flutter_payvessel/flutter_payvessel.dart';
 
-class PaymentPage extends StatelessWidget {
-  final payvessel = Payvessel(
-    config: PayvesselConfig(
-      publicKey: 'pk_live_xxxxx', // Your public key
+// Create Payvessel instance with your API key
+final payvessel = Payvessel(
+  config: PayvesselConfig(
+    apiKey: 'YOUR_API_KEY',
+  ),
+);
+
+// Launch checkout
+Future<void> openCheckout() async {
+  final result = await payvessel.initializeCheckout(
+    context: context,
+    params: CheckoutParams(
+      customerEmail: 'customer@example.com',
+      customerPhoneNumber: '08012345678',
+      amount: '1000',
+      currency: 'NGN',
+      customerName: 'John Doe',
+      channels: [
+        PaymentChannels.bankTransfer,
+        PaymentChannels.card,
+      ],
+      metadata: {
+        'order_id': '12345',
+      },
     ),
+    onError: (error) => print('Error: $error'),
   );
 
-  Future<void> makePayment(BuildContext context, String transactionId) async {
-    final result = await payvessel.checkout(
-      context: context,
-      transactionId: transactionId, // From your server
-    );
-
-    if (result.isSuccessful) {
-      print('Payment successful!');
-      print('Reference: ${result.reference}');
-      print('Payment ID: ${result.paymentId}');
-      // Navigate to success page or update UI
-    } else if (result.isCancelled) {
-      print('Payment was cancelled');
-    } else {
-      print('Payment failed: ${result.message}');
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: () => makePayment(context, 'txn_abc123xyz'),
-      child: Text('Pay Now'),
-    );
+  if (result.isSuccessful) {
+    print('Payment successful!');
+    print('Reference: ${result.reference}');
+  } else if (result.isCancelled) {
+    print('Payment cancelled');
+  } else {
+    print('Payment failed: ${result.message}');
   }
 }
+```
+
+### Trigger from a Button
+
+```dart
+ElevatedButton(
+  onPressed: openCheckout,
+  child: Text('Pay with Payvessel'),
+)
 ```
 
 ### Bottom Sheet Mode
 
 ```dart
-final result = await payvessel.checkout(
+final result = await payvessel.initializeCheckout(
   context: context,
-  transactionId: transactionId,
+  params: params,
   fullScreen: false, // Shows as bottom sheet
 );
 ```
 
-### Custom App Bar
+## Parameters
 
-```dart
-final result = await payvessel.checkout(
-  context: context,
-  transactionId: transactionId,
-  showAppBar: true,
-  appBarTitle: 'Complete Payment',
-);
-```
+### PayvesselConfig
 
-### Embed in Your Own UI
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| apiKey | String | ✅ | Your Payvessel API key |
+| checkoutUrl | String | ❌ | Custom checkout URL (optional) |
 
-```dart
-Scaffold(
-  body: payvessel.buildCheckoutView(
-    transactionId: transactionId,
-    showAppBar: false,
-    onComplete: (result) {
-      // Handle result
-    },
-    onCancelled: () {
-      // Handle cancel
-    },
-  ),
-)
-```
+### CheckoutParams
 
-## PayvesselResult Properties
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| customerEmail | String | ✅ | Customer's email |
+| customerPhoneNumber | String | ✅ | Customer's phone number |
+| amount | String | ✅ | Amount to charge (e.g., "1000") |
+| currency | String | ✅ | Currency code (e.g., "NGN") |
+| customerName | String | ✅ | Full name of the customer |
+| channels | List<String> | ❌ | Payment channels. Defaults to BANK_TRANSFER |
+| metadata | Map | ❌ | Custom metadata object |
+| reference | String | ❌ | Unique transaction reference |
+| redirectUrl | String | ❌ | URL to redirect after payment |
+
+### PayvesselResult
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `status` | `PayvesselStatus` | The transaction status |
-| `isSuccessful` | `bool` | Whether payment succeeded |
-| `isFailed` | `bool` | Whether payment failed |
-| `isCancelled` | `bool` | Whether user cancelled |
-| `reference` | `String?` | The payment reference |
-| `paymentId` | `String?` | The payment ID |
-| `transactionId` | `String?` | The transaction ID |
-| `message` | `String?` | Error or status message |
+| status | PayvesselStatus | Transaction status |
+| isSuccessful | bool | Whether payment succeeded |
+| isFailed | bool | Whether payment failed |
+| isCancelled | bool | Whether user cancelled |
+| reference | String? | Payment reference |
+| paymentId | String? | Payment ID |
+| transactionId | String? | Transaction ID |
+| message | String? | Error or status message |
 
-## Test Mode
-
-For testing, use your test public key:
+## Payment Channels
 
 ```dart
-final payvessel = Payvessel(
-  config: PayvesselConfig(
-    publicKey: 'pk_test_xxxxx',
-    testMode: true,
-  ),
-);
+PaymentChannels.bankTransfer  // "BANK_TRANSFER"
+PaymentChannels.card          // "CARD"
+PaymentChannels.all           // Both channels
 ```
+
+## Comparison with npm Package
+
+| npm Package | Flutter SDK |
+|-------------|-------------|
+| `Checkout({ api_key })` | `Payvessel(config: PayvesselConfig(apiKey: ...))` |
+| `initializeCheckout({ ... })` | `payvessel.initializeCheckout(params: CheckoutParams(...))` |
+| `onSuccess` | `result.isSuccessful` |
+| `onError` | `onError` callback or `result.isFailed` |
+| `onClose` | `result.isCancelled` |
 
 ## Example
 
@@ -171,4 +161,4 @@ See the [example](example/) directory for a complete sample app.
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT License

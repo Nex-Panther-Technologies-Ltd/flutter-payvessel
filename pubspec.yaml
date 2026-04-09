@@ -1,0 +1,19 @@
+name: flutter_payvessel
+description: A Flutter plugin for making payments via Payvessel Payment Gateway using WebView checkout.
+version: 1.0.0
+homepage: https://payvessel.com
+repository: https://github.com/payvessel/flutter_payvessel
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.10.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  webview_flutter: ^4.8.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0

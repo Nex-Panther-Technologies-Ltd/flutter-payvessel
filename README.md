@@ -5,7 +5,7 @@ Works similar to the [npm package](https://www.npmjs.com/package/payvessel-check
 
 ## Features
 
-- 🚀 **Simple API** - Similar to the npm package `payvessel-checkout`
+`payvessel-checkout`
 - 💳 **Multiple Channels** - Bank Transfer and Card payments
 - 📱 **Full-screen & Bottom Sheet** - Choose how to display checkout
 - 🔄 **Callbacks** - onSuccess, onError, onClose support
